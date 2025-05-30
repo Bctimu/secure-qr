@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>Your Secure QR</h1>
-  <div id="qrcode"></div>
+  <canvas id="qrcode"></canvas>
 
   <!-- QR Code generator -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
@@ -50,11 +50,13 @@
       console.log("Combined string:", combined);
       console.log("Hashed value:", hashed, typeof hashed);
 
-      if (!hashed || typeof hashed !== "string") {
-        throw new Error("Hashing failed or result not a string");
-      }
+      const canvas = document.getElementById("qrcode");
+      const options = {
+        width: 256,
+        errorCorrectionLevel: 'H'
+      };
 
-      QRCode.toCanvas(document.getElementById("qrcode"), String(hashed), function (error) {
+      QRCode.toCanvas(canvas, hashed, options, function (error) {
         if (error) {
           console.error("QR Code generation error:", error);
           document.body.innerHTML += `<p style="color:red">QR code generation failed</p>`;
