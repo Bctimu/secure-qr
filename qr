@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secure QR</title>
+  <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+  <h2>Your Secure QR</h2>
+  <div id="qr"></div>
+
+  <script>
+    async function getFingerprint() {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      return result.visitorId;
+    }
+
+    async function getSHA256(str) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function generateQR() {
+      const userId = "replace_this"; // We’ll pass this from Adalo as a query param
+      const timestamp = Date.now();
+      const fingerprint = await getFingerprint();
+
+      const raw = `${userId}|${fingerprint}|${timestamp}`;
+      const hashed = await getSHA256(raw);
+
+      const canvas = document.createElement("canvas");
+      QRCode.toCanvas(canvas, hashed, error => {
+        if (error) console.error(error);
+        document.getElementById("qr").appendChild(canvas);
+      });
+    }
+
+    // Extract user ID from the URL if passed
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("uid");
+    if (userId) {
+      generateQR(userId);
+    } else {
+      document.body.innerHTML = "Missing user ID";
+    }
+  </script>
+</body>
+</html>
