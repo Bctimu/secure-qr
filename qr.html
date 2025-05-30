@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Secure QR</title>
-  <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
+  <script src="https://openfpcdn.io/fingerprintjs/v3.6.1/fp.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 </head>
 <body>
@@ -40,7 +40,7 @@
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("uid");
     if (userId) {
-      generateQR(userId);
+      generateQR(userId.trim());
     } else {
       document.body.innerHTML = "Missing user ID";
     }
