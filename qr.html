@@ -45,13 +45,16 @@
       const combined = `${userId}-${fingerprint}`;
       const hashed = await sha256(combined);
 
-      if (!hashed || typeof hashed !== 'string') {
+      console.log("UserID:", userId);
+      console.log("Fingerprint:", fingerprint);
+      console.log("Combined string:", combined);
+      console.log("Hashed value:", hashed, typeof hashed);
+
+      if (!hashed || typeof hashed !== "string") {
         throw new Error("Hashing failed or result not a string");
       }
 
-      console.log("Hashed value:", hashed);
-
-      QRCode.toCanvas(document.getElementById("qrcode"), hashed, function (error) {
+      QRCode.toCanvas(document.getElementById("qrcode"), String(hashed), function (error) {
         if (error) {
           console.error("QR Code generation error:", error);
           document.body.innerHTML += `<p style="color:red">QR code generation failed</p>`;
