@@ -10,40 +10,42 @@
   <div id="qr"></div>
 
   <script>
-    async function getFingerprint() {
-      const fp = await FingerprintJS.load();
-      const result = await fp.get();
-      return result.visitorId;
-    }
+    window.onload = async () => {
+      async function getFingerprint() {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        return result.visitorId;
+      }
 
-    async function getSHA256(str) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(str);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
+      async function getSHA256(str) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(str);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
 
-    async function generateQR(userId) {
-      const timestamp = Date.now();
-      const fingerprint = await getFingerprint();
-      const raw = `${userId}|${fingerprint}|${timestamp}`;
-      const hashed = await getSHA256(raw);
+      async function generateQR(userId) {
+        const timestamp = Date.now();
+        const fingerprint = await getFingerprint();
+        const raw = `${userId}|${fingerprint}|${timestamp}`;
+        const hashed = await getSHA256(raw);
 
-      const canvas = document.createElement("canvas");
-      QRCode.toCanvas(canvas, hashed, error => {
-        if (error) console.error(error);
-        document.getElementById("qr").appendChild(canvas);
-      });
-    }
+        const canvas = document.createElement("canvas");
+        QRCode.toCanvas(canvas, hashed, error => {
+          if (error) console.error(error);
+          document.getElementById("qr").appendChild(canvas);
+        });
+      }
 
-    const params = new URLSearchParams(window.location.search);
-    const userId = params.get("uid");
-    if (userId) {
-      generateQR(userId.trim());
-    } else {
-      document.body.innerHTML = "Missing user ID";
-    }
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get("uid");
+      if (userId) {
+        generateQR(userId.trim());
+      } else {
+        document.body.innerHTML = "Missing user ID";
+      }
+    };
   </script>
 </body>
 </html>
