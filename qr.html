@@ -48,9 +48,29 @@
       });
     }
 
-    async function main() {
-      // Load FingerprintJS manually and wait for it
-      await loadScript("https://openfpcdn.io/fingerprintjs/v3.6.1/fp.min.js");
+async function main() {
+  console.log("Starting QR generation");
+
+  try {
+    // Use reliable CDN for FingerprintJS
+    await loadScript("https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js");
+    console.log("FingerprintJS loaded");
+
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("uid");
+    console.log("User ID:", userId);
+
+    if (userId) {
+      await generateQR(userId.trim());
+    } else {
+      document.body.innerHTML += "<p style='color:red'>Missing user ID</p>";
+    }
+  } catch (err) {
+    console.error("Error during main execution:", err);
+    document.body.innerHTML += `<p style='color:red'>Error: ${err.message || err}</p>`;
+  }
+}
+
 
       const params = new URLSearchParams(window.location.search);
       const userId = params.get("uid");
