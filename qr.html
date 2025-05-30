@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Secure QR</title>
-  <!-- No need to add scripts here -->
+  <meta charset="UTF-8">
+  <title>Secure QR Code</title>
 </head>
 <body>
-  <h2>Your Secure QR</h2>
-  <div id="qr"></div>
+  <h1>Your Secure QR</h1>
+  <div id="qrcode"></div>
 
+  <!-- QR Code generator -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
   <script>
-    function loadScript(src) {
+    async function loadScript(url) {
       return new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = src;
+        const script = document.createElement('script');
+        script.src = url;
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);
@@ -22,62 +23,53 @@
     }
 
     async function getFingerprint() {
-      const fp = await FingerprintJS.load();
-      const result = await fp.get();
+      const fpPromise = await FingerprintJS.load();
+      const result = await fpPromise.get();
       return result.visitorId;
     }
 
-    async function getSHA256(str) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(str);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
     async function generateQR(userId) {
-      const timestamp = Date.now();
       const fingerprint = await getFingerprint();
-      const raw = `${userId}|${fingerprint}|${timestamp}`;
-      const hashed = await getSHA256(raw);
+      const combined = `${userId}-${fingerprint}`;
+      const hashed = await sha256(combined);
+      console.log("Hashed value:", hashed);
 
-      const canvas = document.createElement("canvas");
-      QRCode.toCanvas(canvas, hashed, error => {
-        if (error) console.error(error);
-        document.getElementById("qr").appendChild(canvas);
+      QRCode.toCanvas(document.getElementById("qrcode"), hashed, function (error) {
+        if (error) {
+          console.error("QR Code generation error:", error);
+          document.body.innerHTML += `<p style="color:red">QR code generation failed</p>`;
+        } else {
+          console.log("QR Code successfully generated");
+        }
       });
     }
 
-async function main() {
-  console.log("Starting QR generation");
-
-  try {
-    // Use reliable CDN for FingerprintJS
-    await loadScript("https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js");
-    console.log("FingerprintJS loaded");
-
-    const params = new URLSearchParams(window.location.search);
-    const userId = params.get("uid");
-    console.log("User ID:", userId);
-
-    if (userId) {
-      await generateQR(userId.trim());
-    } else {
-      document.body.innerHTML += "<p style='color:red'>Missing user ID</p>";
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
     }
-  } catch (err) {
-    console.error("Error during main execution:", err);
-    document.body.innerHTML += `<p style='color:red'>Error: ${err.message || err}</p>`;
-  }
-}
 
+    async function main() {
+      console.log("Initializing...");
 
-      const params = new URLSearchParams(window.location.search);
-      const userId = params.get("uid");
-      if (userId) {
-        await generateQR(userId.trim());
-      } else {
-        document.body.innerHTML = "Missing user ID";
+      try {
+        await loadScript("https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js");
+        console.log("FingerprintJS loaded");
+
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get("uid");
+        console.log("User ID:", userId);
+
+        if (userId) {
+          await generateQR(userId.trim());
+        } else {
+          document.body.innerHTML += "<p style='color:red'>Missing UID in URL. Example: ?uid=testuser</p>";
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        document.body.innerHTML += `<p style="color:red">Unexpected error: ${err.message || err}</p>`;
       }
     }
 
