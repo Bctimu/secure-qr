@@ -28,10 +28,27 @@
       return result.visitorId;
     }
 
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
     async function generateQR(userId) {
       const fingerprint = await getFingerprint();
+
+      if (!fingerprint || !userId) {
+        throw new Error("Fingerprint or userId is missing");
+      }
+
       const combined = `${userId}-${fingerprint}`;
       const hashed = await sha256(combined);
+
+      if (!hashed || typeof hashed !== 'string') {
+        throw new Error("Hashing failed or result not a string");
+      }
+
       console.log("Hashed value:", hashed);
 
       QRCode.toCanvas(document.getElementById("qrcode"), hashed, function (error) {
@@ -44,13 +61,6 @@
       });
     }
 
-    async function sha256(message) {
-      const msgBuffer = new TextEncoder().encode(message);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-    }
-
     async function main() {
       console.log("Initializing...");
 
@@ -60,9 +70,10 @@
 
         const params = new URLSearchParams(window.location.search);
         const userId = params.get("uid");
+
         console.log("User ID:", userId);
 
-        if (userId) {
+        if (userId && userId.trim()) {
           await generateQR(userId.trim());
         } else {
           document.body.innerHTML += "<p style='color:red'>Missing UID in URL. Example: ?uid=testuser</p>";
